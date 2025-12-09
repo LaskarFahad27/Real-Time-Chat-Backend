@@ -196,4 +196,113 @@ const getCurrentUser = async (req, res) => {
     }
 }
 
-module.exports = {getAllStudents, getStudentByID, createStudent, studentLogin, getCurrentUser};
+//---------Store Messages-----------
+
+const storeMessage = async (req, res) => {
+    try {
+        const {message,time,senderId,receiverId} = req.body;
+
+        if(!message || !time || !senderId || !receiverId){
+            return res.status(400).send({
+                success: false,
+                message: "Please provide all required fields"
+            })
+        }
+
+        const data = await db.query(`INSERT INTO messages (message, time, senderId, receiverId) VALUES (?,?,?,?)`,[message, time, senderId, receiverId]);
+          if(!data){
+            return res.status(400).send({
+                success: false,
+                message: "Unable to store message"
+            })
+        }
+        res.status(201).send({
+            success: true,
+            message: "Message stored successfully"
+        })
+        } catch (error) {
+
+        console.log(error);
+        res.status(500).send({
+            success: false,
+            message: "Internal Server Error",
+            error
+        })
+    }
+}
+
+//---------Get Messages-----------
+
+ const getMessages = async (req, res) => {
+  try {
+    const {myId, targetId} = req.query
+    console.log("myId:", myId, "targetId:", targetId);
+
+        if(!myId || !targetId){
+            return res.status(400).send({
+                success: false,
+                message: "Sender ID or Receiver ID Missing"
+            })
+        }
+
+
+    const [rows] = await db.query(
+      `SELECT * FROM messages 
+       WHERE (senderId = ? AND receiverId = ?) 
+          OR (senderId = ? AND receiverId = ?)`,
+      [myId, targetId, targetId, myId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).send({
+        success: false,
+        message: "No messages found"
+      });
+    }
+
+    res.status(200).send({
+      success: true,
+      message: "Messages fetched successfully",
+      data: rows
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Server Error",
+      error
+    });
+  }
+};
+
+//----------Get ID if User logged in with Google-----------
+
+const getId = async (req, res) =>{
+    try {
+
+        const {email} = req.query
+        const data = await db.query('SELECT id FROM students WHERE email = ?', [email]);
+        if(!data){
+            return res.status(404).send({
+                success:false,
+                message:'No ID Found'
+            })
+        }
+        res.status(200).send({
+            success:true,
+            message:'ID Fetched Successfully',
+            data:data[0]
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({
+            success:false,
+            message:'Server Error',
+            error
+        })
+    }
+}
+
+
+module.exports = {getAllStudents, getStudentByID, createStudent, studentLogin, getCurrentUser, storeMessage, getMessages, getId};
