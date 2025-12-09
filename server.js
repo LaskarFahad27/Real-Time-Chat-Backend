@@ -74,39 +74,40 @@ const io = new Server(server, {
 let onlineUsers = {};
 
 io.on("connection", (socket) => {
-    console.log(`User connected: ${socket.id}`);
+  console.log("User connected:", socket.id);
 
-     socket.on("register", (userId) => {
-        onlineUsers[userId] = socket.id;
-        console.log(`User registered: ${userId} -> ${socket.id}`);
-    });
+  // Register user
+  socket.on("register", (userId) => {
+    onlineUsers[userId] = socket.id;
+    console.log(`User registered ${userId} -> ${socket.id}`);
+    console.log("Current Online Users:", onlineUsers);
+  });
 
-        socket.on("message", ({ newMessage, targetId }) => {
-        console.log("New message:", newMessage);
+  // Send a message to target user
+  socket.on("message", ({ newMessage, targetId }) => {
+    const receiverSocket = onlineUsers[targetId];
 
-        const receiverSocketId = onlineUsers[targetId];
+    if (receiverSocket) {
+      io.to(receiverSocket).emit("received_message", newMessage);
+      console.log(`Message delivered to ${targetId}`);
+    } else {
+      console.log("⚠ Receiver offline:", targetId);
+    }
+  });
 
-        if (receiverSocketId) {
-            io.to(receiverSocketId).emit("received_message", newMessage);
-            console.log(`📨 Message delivered to ${targetId}`);
-        } else {
-            console.log("⚠ Target user offline or not registered");
-        }
-    });
+  // Cleanup on disconnect
+  socket.on("disconnect", () => {
+    console.log("Disconnected:", socket.id);
 
-    socket.on("disconnect", () => {
-        console.log("User disconnected:", socket.id);
-
-        for (let id in onlineUsers) {
-            if (onlineUsers[id] === socket.id) {
-                delete onlineUsers[id];
-                break;
-            }
-        }
-    });
+    for (const userId in onlineUsers) {
+      if (onlineUsers[userId] === socket.id) {
+        delete onlineUsers[userId];
+        break;
+      }
+    }
+  });
 });
 
-//listen
-server.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+server.listen(4000, () => {
+  console.log("Server running on http://localhost:4000");
 });

@@ -1,5 +1,5 @@
 const express = require('express');
-const { getAllStudents, getStudentByID, createStudent, studentLogin, getCurrentUser } = require('../controllers/studentController');
+const { getAllStudents, getStudentByID, createStudent, studentLogin, getCurrentUser, storeMessage, getMessages, getId } = require('../controllers/studentController');
 const { isAuthenticated, authenticateJWT } = require('../middleware/auth');
 
 const router = express.Router();
@@ -9,14 +9,14 @@ const router = express.Router();
 //GET all students || GET - Protected route with JWT
 router.get('/', authenticateJWT, getAllStudents);
 
-//GET student by id || GET - Protected route with JWT
-router.get('/:id', authenticateJWT, getStudentByID);
+//Store Message
+router.post('/messages', authenticateJWT, storeMessage);
 
-//CREATE student || POST
-router.post('/',createStudent);
+//Get Messages
+router.get('/messages', authenticateJWT, getMessages);
 
-//Login with name and email
-router.post('/login', studentLogin);
+//Get ID of Google logged in user
+router.get('/getId', authenticateJWT, getId);
 
 //Get current user profile - Protected route with JWT
 router.get('/profile', authenticateJWT, getCurrentUser);
@@ -29,6 +29,15 @@ router.get('/dashboard', authenticateJWT, (req, res) => {
         user: req.user
     });
 });
+
+//GET student by id || GET - Protected route with JWT
+router.get('/:id', authenticateJWT, getStudentByID);
+
+//CREATE student || POST
+router.post('/',createStudent);
+
+//Login with name and email
+router.post('/login', studentLogin);
 
 // Check JWT authentication status
 router.get('/auth/status', authenticateJWT, (req, res) => {
